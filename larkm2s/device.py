@@ -77,9 +77,9 @@ class Receiver:
                 self._transact(h, P.HEARTBEAT, P.build_report(P.HEARTBEAT))
                 next_beat = time.monotonic() + HEARTBEAT_INTERVAL
             try:
-                cmd, report = self._outbox.get(timeout=0.05)
+                cmd, report = self._outbox.get_nowait()
             except queue.Empty:
-                self._read(h, 0)
+                self._read(h, 50)
                 continue
             self._transact(h, cmd, report)
 
@@ -93,6 +93,8 @@ class Receiver:
                 return
 
     def _read(self, h, timeout_ms):
+        # timeout_ms must be > 0: hidapi's read(n, 0) blocks until a report arrives,
+        # and the receiver only sends reports in reply to a request.
         data = h.read(P.REPORT_SIZE, timeout_ms)
         if not data:
             return None
