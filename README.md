@@ -15,8 +15,9 @@ Not affiliated with or endorsed by Hollyland. Use at your own risk.
 - Volume 1–6 and volume lock
 - Channel mode: Mono or Stereo
 - Auto power-off: 15 min or Never
-- Phone Speaker switch
-- Indicator light (only on receiver firmware that supports it; V2.0.0.9 doesn't)
+- Computer Speakers switch (HollyAudio calls it "Phone Speaker"): keeps sound playing from the
+  PC's own speakers while the receiver is plugged in. Changing it restarts the receiver.
+- Indicator light (receiver firmware newer than V2.0.0.9, as in HollyAudio)
 - Restart receiver
 - Reconnects automatically when the receiver is unplugged or restarted
 - Follows the Windows light/dark app theme
@@ -54,6 +55,7 @@ anything.
 
 ```powershell
 .venv\Scripts\python -m tests.test_protocol   # offline
+.venv\Scripts\python -m tests.test_app        # offline, no commands reach the receiver
 .venv\Scripts\python -m tests.live_check      # needs the receiver plugged in; read-only
 ```
 
@@ -88,8 +90,8 @@ RX -> host:  55 | BB DD cmd ctl lenHi lenLo payload...     | zero padding
 | 0x06 | Set noise level | 1 = weak, 2 = strong              | status, level |
 | 0x11 | Get noise level | –                                 | 0 = off, 1, 2 |
 | 0x19 | Toggle noise    | `02`                              | `87` = now on, `07` = now off |
-| 0x12 | Set Phone Speaker | 0 = on, 1 = off                 | status |
-| 0x13 | Get Phone Speaker | –                               | 0 = on |
+| 0x12 | Set Computer Speakers ("Phone Speaker") | 0 = on, 1 = off; receiver restarts | status |
+| 0x13 | Get Computer Speakers | –                           | 0 = on |
 | 0x18 | Set channel mode | 0 = mono, 1 = stereo             | status |
 | 0x34 | Set volume lock | 1 = locked, 0 = unlocked          | status |
 | 0x35 | Get volume lock | –                                 | 0/1 |

@@ -204,7 +204,8 @@ class App:
         self.shutdown.pack(fill="x", pady=(self.px(10), 0))
 
         card = self._card(left)
-        self.speaker_toggle = self._row(card, "Phone Speaker", "Host speaker output while plugged in",
+        self.speaker_toggle = self._row(card, "Computer Speakers",
+                                        "Keep sound on this PC's speakers while plugged in",
                                         lambda p: Toggle(p, self, self._set_speaker))
         self.light_frame = tk.Frame(card, bg=t["card"])
         self.light_frame.pack(fill="x", pady=(self.px(12), 0))
@@ -333,9 +334,13 @@ class App:
         elif r.cmd in (P.SET_VOLUME, P.SET_NOISE_LEVEL, P.TOGGLE_NOISE, P.SET_VOLUME_LOCK,
                        P.SET_VOICE_MODE, P.SET_SHUTDOWN_TIME, P.SET_LIGHT, P.SET_PHONE_SPEAKER):
             ok = P.set_succeeded(r)
-            self._show_toast("Saved" if ok else "The receiver didn't accept that change", not ok)
             if not ok:
+                self._show_toast("The receiver didn't accept that change", True)
                 self.holds.clear()
+            elif r.cmd == P.SET_PHONE_SPEAKER:
+                self._show_toast("Saved. The receiver restarts in a few seconds to apply it.")
+            else:
+                self._show_toast("Saved")
             if r.cmd == P.SET_PHONE_SPEAKER:
                 self.rx.send(P.GET_PHONE_SPEAKER)
         self._render()
@@ -401,6 +406,10 @@ class App:
         self._render()
 
     def _set_speaker(self, on):
+        if not messagebox.askyesno(APP_NAME, "Changing this restarts the receiver.\n\nAudio from the "
+                                             "mics will drop for a few seconds. Continue?",
+                                   parent=self.root):
+            return
         self._hold("speaker", on)
         self.rx.send(P.SET_PHONE_SPEAKER, bytes([0 if on else 1]))
         self._render()
@@ -485,7 +494,7 @@ class App:
         light = self._get("light_on", s.light_on if s else None)
         self.light_toggle.set(bool(light), enabled=live and light is not None)
         self.light_note.configure(
-            text="Not supported by this receiver firmware" if live and light is None else "")
+            text="Needs receiver firmware newer than V2.0.0.9" if live and light is None else "")
 
     def _show_toast(self, text, error=False):
         self.toast.configure(text=text, fg=self.t["bad"] if error else self.t["muted"])
