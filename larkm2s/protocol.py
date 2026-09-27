@@ -80,6 +80,15 @@ def parse_report(report: bytes):
     return Reply(cmd, ctl & 0x0F, bytes(report[start + 6:end]))
 
 
+def set_succeeded(reply: Reply) -> bool:
+    """Whether a reply to a set command reports success."""
+    if not reply.payload:
+        return False
+    if reply.cmd == TOGGLE_NOISE:
+        return True      # acked with 0x87 (now on) or 0x07 (now off)
+    return reply.payload[0] == 1
+
+
 @dataclass
 class Status:
     """Decoded heartbeat (0x10) reply."""

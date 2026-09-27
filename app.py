@@ -332,7 +332,7 @@ class App:
             self.phone_speaker = r.payload[0] == 0
         elif r.cmd in (P.SET_VOLUME, P.SET_NOISE_LEVEL, P.TOGGLE_NOISE, P.SET_VOLUME_LOCK,
                        P.SET_VOICE_MODE, P.SET_SHUTDOWN_TIME, P.SET_LIGHT, P.SET_PHONE_SPEAKER):
-            ok = bool(r.payload) and r.payload[0] == 1
+            ok = P.set_succeeded(r)
             self._show_toast("Saved" if ok else "The receiver didn't accept that change", not ok)
             if not ok:
                 self.holds.clear()
@@ -485,7 +485,7 @@ class App:
         light = self._get("light_on", s.light_on if s else None)
         self.light_toggle.set(bool(light), enabled=live and light is not None)
         self.light_note.configure(
-            text="Not reported by this receiver firmware" if live and light is None else "")
+            text="Not supported by this receiver firmware" if live and light is None else "")
 
     def _show_toast(self, text, error=False):
         self.toast.configure(text=text, fg=self.t["bad"] if error else self.t["muted"])

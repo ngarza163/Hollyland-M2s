@@ -16,7 +16,7 @@ Not affiliated with or endorsed by Hollyland. Use at your own risk.
 - Channel mode: Mono or Stereo
 - Auto power-off: 15 min or Never
 - Phone Speaker switch
-- Indicator light (only on receiver firmware that reports it)
+- Indicator light (only on receiver firmware that supports it; V2.0.0.9 doesn't)
 - Restart receiver
 - Reconnects automatically when the receiver is unplugged or restarted
 - Follows the Windows light/dark app theme
@@ -50,6 +50,13 @@ The output is `dist\Lark M2S Control.exe`. `python make_icon.py` regenerates `as
 `python diagnose.py` prints the receiver's status, versions and serial numbers without changing
 anything.
 
+## Tests
+
+```powershell
+.venv\Scripts\python -m tests.test_protocol   # offline
+.venv\Scripts\python -m tests.live_check      # needs the receiver plugged in; read-only
+```
+
 ## Protocol notes
 
 Tested with a Lark M2S USB-C receiver (VID `0x3547`, PID `0x0405`, receiver firmware V2.0.0.9,
@@ -67,7 +74,9 @@ RX -> host:  55 | BB DD cmd ctl lenHi lenLo payload...     | zero padding
 - `ctl` is `0x40 | device` in requests (0 = receiver, 1 = mic 1, 2 = mic 2). Replies use
   `0x80 | device`.
 - `xor` is the XOR of all frame bytes before it. The receiver doesn't add one to replies.
-- Set commands reply with payload `01` on success.
+- Set commands reply with payload `01` on success, except the noise toggle (see table).
+- The receiver only sends reports in reply to a request, so poll the heartbeat (the app does
+  once a second). Commands the firmware doesn't know get no reply.
 
 | Cmd  | Name            | Request payload                   | Reply payload |
 |------|-----------------|-----------------------------------|---------------|
@@ -78,14 +87,14 @@ RX -> host:  55 | BB DD cmd ctl lenHi lenLo payload...     | zero padding
 | 0x05 | Set volume      | 0–5 (shown as 1–6)                | status |
 | 0x06 | Set noise level | 1 = weak, 2 = strong              | status, level |
 | 0x11 | Get noise level | –                                 | 0 = off, 1, 2 |
-| 0x19 | Toggle noise    | `02`                              | status |
+| 0x19 | Toggle noise    | `02`                              | `87` = now on, `07` = now off |
 | 0x12 | Set Phone Speaker | 0 = on, 1 = off                 | status |
 | 0x13 | Get Phone Speaker | –                               | 0 = on |
 | 0x18 | Set channel mode | 0 = mono, 1 = stereo             | status |
 | 0x34 | Set volume lock | 1 = locked, 0 = unlocked          | status |
 | 0x35 | Get volume lock | –                                 | 0/1 |
 | 0x36 | Set auto power-off | 0 = 15 min, 1 = never          | status |
-| 0x39 | Set indicator light | 0 = on, 1 = off               | status |
+| 0x39 | Set indicator light | 0 = on, 1 = off               | status (no reply on V2.0.0.9) |
 | 0x0C | Restart receiver | –                                | – |
 
 Heartbeat reply payload: `[0]` mic 1 connected, `[1]` mic 2 connected, `[2]` mic 1 battery %,
